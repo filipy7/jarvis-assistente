@@ -1,1 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d16">
+<title>J.A.R.V.I.S.</title>
 
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #080d16;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 22px;
+  background: #101c2a;
+  border-bottom: 1px solid #28516d;
+  color: #8bdcff;
+  font-size: 21px;
+  letter-spacing: 3px;
+}
+
+main {
+  max-width: 500px;
+  margin: auto;
+  padding: 25px 18px;
+}
+
+.orb {
+  width: 145px;
+  height: 145px;
+  border: 2px solid #65caff;
+  border-radius: 50%;
+  margin: 45px auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px #218acb55;
+}
+
+.orb span {
+  font-size: 55px;
+  color: #8bdcff;
+}
+
+h1 {
+  text-align: center;
+  color: #8bdcff;
+  letter-spacing: 7px;
+}
+
+#status {
+  text-align: center;
+  color: #9bb4c8;
+  margin: 30px 0;
+}
+
+#conversation {
+  min-height: 120px;
+}
+
+.message {
+  background: #14283b;
+  border-radius: 15px;
+  padding: 15px;
+  margin: 12px 0;
+  color: #d9f3ff;
+}
+
+.controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 25px;
+  padding-bottom: max(25px, env(safe-area-inset-bottom));
+  background: #101c2a;
+  text-align: center;
+  border-top: 1px solid #28516d;
+}
+
+button {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  border: 1px solid #8bdcff;
+  background: #174363;
+  color: white;
+  font-size: 30px;
+}
+
+button.recording {
+  background: #a83245;
+}
+
+small {
+  display: block;
+  color: #8bdcff;
+  margin-top: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>✦ J.A.R.V.I.S.</header>
+
+<main>
+  <div class="orb"><span>J</span></div>
+
+  <h1>JARVIS</h1>
+
+  <p id="status">Aguardando seu comando.</p>
+
+  <div id="conversation"></div>
+</main>
+
+<div class="controls">
+  <button id="mic">🎙</button>
+  <small>TOQUE PARA FALAR</small>
+</div>
+
+<script>
+let recorder;
+let chunks = [];
+let recording = false;
+
+const mic = document.getElementById("mic");
+const statusText = document.getElementById("status");
+const conversation = document.getElementById("conversation");
+
+mic.onclick = async () => {
+
+  if (!recording) {
+    try {
+      const stream = await navigator.mediaDevices
+        .getUserMedia({ audio: true });
+
+      chunks = [];
+
+      recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const audio = new Blob(chunks, {
+          type: recorder.mimeType
+        });
+
+        const url = URL.createObjectURL(audio);
+
+        const player = document.createElement("audio");
+        player.controls = true;
+        player.src = url;
+
+        const message = document.createElement("div");
+        message.className = "message";
+        message.innerHTML = "🎙 Áudio gravado";
+
+        message.appendChild(player);
+        conversation.appendChild(message);
+
+        stream.getTracks().forEach(track => track.stop());
+
+        statusText.textContent =
+          "Áudio gravado. Pronto para o próximo comando.";
+      };
+
+      recorder.start();
+      recording = true;
+
+      mic.classList.add("recording");
+      mic.textContent = "■";
+      statusText.textContent = "Estou ouvindo...";
+
+    } catch (error) {
+      statusText.textContent =
+        "Não foi possível acessar o microfone. Verifique as permissões.";
+    }
+
+  } else {
+
+    recorder.stop();
+    recording = false;
+
+    mic.classList.remove("recording");
+    mic.textContent = "🎙";
+  }
+};
+</script>
+
+</body>
+</html>
